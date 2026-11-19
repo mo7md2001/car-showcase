@@ -1,0 +1,621 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="color-scheme" content="light dark">
+<title>معرض السيارات</title>
+<meta name="description" content="معرض السيارات — تصفح السيارات المتاحة بالصور والأسعار والمواصفات والوصف الكامل.">
+<link rel="icon" href="data:,">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#f3f5f7;
+    --surface:#ffffff;
+    --surface-2:#eef2f5;
+    --ink:#182430;
+    --muted:#5d6f7e;
+    --line:#dde4ea;
+    --price:#0b6e4f;
+    --band:#101d29;
+    --band-ink:#f2f6f9;
+    --sold:#bc232a;
+    --chip-bg:#eef2f5;
+    --shadow:0 1px 2px rgba(16,29,41,.06),0 8px 24px rgba(16,29,41,.07);
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#0c1319;
+      --surface:#152029;
+      --surface-2:#1b2a37;
+      --ink:#e9eff4;
+      --muted:#9db0c0;
+      --line:#27394a;
+      --price:#43c08d;
+      --band:#0a141e;
+      --chip-bg:#1b2a37;
+      --shadow:0 1px 2px rgba(0,0,0,.35),0 8px 24px rgba(0,0,0,.35);
+    }
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{
+    font-family:"IBM Plex Sans Arabic",system-ui,-apple-system,"Segoe UI",Tahoma,Arial,sans-serif;
+    background:var(--bg);color:var(--ink);line-height:1.6;
+    -webkit-font-smoothing:antialiased;
+  }
+  img{display:block;max-width:100%}
+
+  /* ---------- Header band ---------- */
+  .band{background:var(--band);color:var(--band-ink)}
+  .band-in{max-width:1180px;margin:0 auto;padding:26px 18px 24px}
+  .site-name{font-size:15px;font-weight:600;opacity:.85}
+  .band h1{font-size:clamp(28px,5.5vw,40px);font-weight:700;line-height:1.25;margin-top:2px}
+  .band .sub{margin-top:6px;font-size:15px;color:#b9c9d6;max-width:56ch}
+  .band .meta{margin-top:14px;display:flex;flex-wrap:wrap;gap:8px;font-size:13.5px}
+  .band .meta span{background:rgba(255,255,255,.09);border:1px solid rgba(255,255,255,.14);padding:5px 12px;border-radius:999px}
+
+  /* ---------- Grid ---------- */
+  main{max-width:1180px;margin:0 auto;padding:22px 14px 40px}
+  .grid{display:grid;grid-template-columns:1fr;gap:18px}
+  @media (min-width:640px){.grid{grid-template-columns:repeat(2,1fr)}}
+  @media (min-width:1024px){.grid{grid-template-columns:repeat(3,1fr)}}
+
+  .card{
+    background:var(--surface);border:1px solid var(--line);border-radius:14px;
+    overflow:hidden;box-shadow:var(--shadow);display:flex;flex-direction:column;
+  }
+
+  /* ---------- Gallery ---------- */
+  .photo-wrap{position:relative;background:var(--surface-2)}
+  .photo-main{width:100%;aspect-ratio:4/3;object-fit:cover;cursor:zoom-in;background:var(--surface-2)}
+  .card.sold .photo-main,.card.sold .thumb img{filter:saturate(.3) brightness(.86)}
+  .badge-sold{
+    position:absolute;top:12px;inset-inline-start:12px;z-index:2;
+    background:var(--sold);color:#fff;font-weight:700;font-size:15px;
+    padding:5px 16px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.3);
+  }
+  .photo-count{
+    position:absolute;bottom:10px;inset-inline-end:10px;z-index:2;
+    background:rgba(10,18,26,.72);color:#fff;font-size:12.5px;font-weight:500;
+    padding:3px 10px;border-radius:999px;
+  }
+  .thumbs{display:flex;flex-wrap:wrap;gap:6px;padding:8px 10px 2px}
+  .thumb{
+    width:52px;height:40px;border-radius:7px;overflow:hidden;padding:0;cursor:pointer;
+    border:2px solid transparent;background:var(--surface-2);flex:0 0 auto;
+  }
+  .thumb img{width:100%;height:100%;object-fit:cover}
+  .thumb.active{border-color:var(--price)}
+  .thumb:focus-visible,.photo-main:focus-visible{outline:3px solid var(--price);outline-offset:2px}
+
+  /* ---------- Card body ---------- */
+  .body{padding:14px 16px 18px;display:flex;flex-direction:column;gap:12px;flex:1}
+  .car-title{font-size:19px;font-weight:700;line-height:1.4}
+  .price{font-size:24px;font-weight:700;color:var(--price);line-height:1.3}
+  .price small{font-size:15px;font-weight:600}
+  .card.sold .price{color:var(--muted)}
+
+  .specs{display:grid;grid-template-columns:1fr 1fr;gap:7px}
+  .spec{background:var(--chip-bg);border-radius:9px;padding:7px 11px;min-height:44px}
+  .spec .k{display:block;font-size:12px;color:var(--muted);font-weight:500}
+  .spec .v{display:block;font-size:14.5px;font-weight:600;line-height:1.45}
+
+  .desc-wrap{display:flex;flex-direction:column;gap:6px}
+  .desc{
+    font-size:14.5px;line-height:1.85;color:var(--ink);white-space:pre-line;
+    overflow:hidden;position:relative;
+  }
+  .desc.clamped{max-height:9.2em}
+  .desc.clamped::after{
+    content:"";position:absolute;inset-inline:0;bottom:0;height:3.2em;
+    background:linear-gradient(to bottom,transparent,var(--surface));
+  }
+  .toggle-desc{
+    align-self:flex-start;background:none;border:none;cursor:pointer;
+    color:var(--price);font:inherit;font-size:14px;font-weight:600;
+    padding:8px 4px;min-height:40px;
+  }
+  .toggle-desc:hover{text-decoration:underline}
+
+  .empty{
+    background:var(--surface);border:1px dashed var(--line);border-radius:14px;
+    padding:44px 20px;text-align:center;color:var(--muted);font-size:16px;
+  }
+
+  footer{max-width:1180px;margin:0 auto;padding:0 18px 34px;color:var(--muted);font-size:13.5px;text-align:center}
+
+  /* ---------- Lightbox ---------- */
+  .lightbox{
+    position:fixed;inset:0;z-index:50;background:rgba(6,11,16,.94);
+    display:none;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:16px;
+  }
+  .lightbox.open{display:flex}
+  .lb-img{max-width:100%;max-height:76vh;object-fit:contain;border-radius:10px}
+  .lb-bar{display:flex;align-items:center;gap:10px;color:#e8eff4}
+  .lb-btn{
+    width:46px;height:46px;border-radius:50%;border:1px solid rgba(255,255,255,.25);
+    background:rgba(255,255,255,.08);color:#fff;font-size:20px;cursor:pointer;
+    display:flex;align-items:center;justify-content:center;
+  }
+  .lb-btn:hover{background:rgba(255,255,255,.18)}
+  .lb-count{font-size:14px;min-width:64px;text-align:center}
+  .lb-close{position:absolute;top:14px;inset-inline-end:14px}
+  .lb-title{color:#c7d4df;font-size:14.5px;text-align:center}
+</style>
+</head>
+<body>
+
+<header class="band">
+  <div class="band-in">
+    <div class="site-name">معرض السيارات</div>
+    <h1>السيارات المتاحة</h1>
+    <p class="sub">تصفح السيارات المعروضة بالصور والأسعار والمواصفات الكاملة، وكل عربية بوصفها التفصيلي.</p>
+    <div class="meta" id="bandMeta"></div>
+  </div>
+</header>
+
+<main>
+  <div class="grid" id="grid"></div>
+  <div class="empty" id="emptyState" hidden>لا توجد سيارات معروضة حالياً.</div>
+</main>
+
+<footer>معرض السيارات — جميع الأسعار بالجنيه المصري.</footer>
+
+<!-- Lightbox -->
+<div class="lightbox" id="lightbox" role="dialog" aria-modal="true" aria-label="معرض صور السيارة">
+  <button class="lb-btn lb-close" id="lbClose" aria-label="إغلاق">✕</button>
+  <img class="lb-img" id="lbImg" alt="">
+  <div class="lb-title" id="lbTitle"></div>
+  <div class="lb-bar">
+    <button class="lb-btn" id="lbPrev" aria-label="الصورة السابقة">›</button>
+    <span class="lb-count" id="lbCount"></span>
+    <button class="lb-btn" id="lbNext" aria-label="الصورة التالية">‹</button>
+  </div>
+</div>
+
+<!-- ================================================================
+     CARS-DATA-START — كتلة بيانات السيارات (تُستبدل كاملة عند التحديث التلقائي)
+     ================================================================ -->
+<script type="application/json" id="cars-data">
+{
+  "updatedAt": "2026-11-19",
+  "cars": [
+    {
+      "id": "cmwiie5th02rk3gnyofpu4eth",
+      "make": "Porsche",
+      "model": "Macan",
+      "year": 2024,
+      "price": 4300000,
+      "mileage": 40000,
+      "color": "Black",
+      "transmission": "أوتوماتيك",
+      "condition": "فابريكا بالكامل",
+      "description": "فيه عربيات بتوصلك… وفيه عربية بتخليك تحس إنك سايق حاجة مختلفة.\n\nPorsche Macan 2024 — أسود، فرش جلد أحمر، 40,000 كم بس.\n\nفابريكا بالكامل، بدون حوادث، والشاسيه والقوائم سليمة تماماً.\n\nضمانها ساري، وكل صياناتها في التوكيل بسجل كامل — آخر صيانة على 40,000 كم (16 نوفمبر 2026)، واتغير فيها الزيوت والفلاتر بس.\n\nمن جوه: فرش جلد أحمر، كراسي كهربا بذاكرة، سقف بانوراما، و Apple CarPlay.\n\nومن برّه: LED، وكاميرا 360، و AWD — ثبات ومتعة سواقة بورشه.\n\nرخصة سارية، وبدون أي التزامات.\n\n📍 المعاينة: 6 أكتوبر — وأفضل وقت مساءً",
+      "photos": [
+        "https://tmma-production.up.railway.app/api/photo/cmwij3oml02rp3gnyhy5iv9x7",
+        "https://tmma-production.up.railway.app/api/photo/cmwij3ows02rq3gnyzdbe89ld",
+        "https://tmma-production.up.railway.app/api/photo/cmwij3pe602rr3gnycp1znidi",
+        "https://tmma-production.up.railway.app/api/photo/cmwij3pmf02rs3gnyfkotm3hh",
+        "https://tmma-production.up.railway.app/api/photo/cmwij3q1502rt3gnyzo46is0g",
+        "https://tmma-production.up.railway.app/api/photo/cmwij3qeb02ru3gnyvzw2o3di",
+        "https://tmma-production.up.railway.app/api/photo/cmwij3r4d02rv3gny8euf78ys",
+        "https://tmma-production.up.railway.app/api/photo/cmwij3rc802rw3gnytce1ozg1",
+        "https://tmma-production.up.railway.app/api/photo/cmwij3rjf02rx3gny4xlzyvyo"
+      ],
+      "status": "available"
+    },
+    {
+      "id": "cmwi3pew802ql3gnysx9ocw7l",
+      "make": "BYD",
+      "model": "Han",
+      "year": 2025,
+      "price": 1980000,
+      "mileage": 4500,
+      "color": "Black",
+      "transmission": "أوتوماتيك",
+      "condition": "فابريكا بالكامل",
+      "description": "فيه عربيات بتمشي على الطريق… وفيه عربية بتخليك تحس إن المستقبل وصل.\n\nBYD Han 2025 — سيدان كهربائية فاخرة بالأسود، كسر زيرو: عداد 4,500 كم بس، وبتمشي 701 كم (CLTC) في الشحنة الواحدة.\n\nفابريكا بالكامل، بدون حوادث، والشاسيه والقوائم سليمة تماماً.\n\nصياناتها منتظمة عند مركز متخصص وبسجل كامل — آخر صيانة كسر زيرو، ومتغيرش فيها أي قطع.\n\nومن جوه، الفخامة بتتكلم: سقف بانوراما، فرش جلد، كراسي كهربا بتسخين وتهوية وذاكرة، وإضاءة محيطية، و Digital Cockpit.\n\nومن برّه: Matrix LED و Adaptive Lights، كاميرا 360، Blind Spot وحساسات ركن، ومثبت سرعة تكيفي، وتعليق هوائي يخليك تحس إنك طاير مش ماشي.\n\nكهربا بالكامل — يعني صفر بنزين، وصفر صوت، وعزم فوري من أول لمسة.\n\nرخصة 3 سنين — مرور العتبة، وضمان 5 سنين، وبدون أي التزامات. وصاحبها بيبيع لظروف سيولة، مش أكتر.\n\n📍 المعاينة: القاهرة — التجمع الخامس",
+      "photos": [
+        "https://tmma-production.up.railway.app/api/photo/cmwij6u9902ry3gny1199sqls",
+        "https://tmma-production.up.railway.app/api/photo/cmwij6v5c02rz3gnyf7xphyrw",
+        "https://tmma-production.up.railway.app/api/photo/cmwij6vmx02s03gnynssy81qh",
+        "https://tmma-production.up.railway.app/api/photo/cmwij6vzq02s13gny8130enmt",
+        "https://tmma-production.up.railway.app/api/photo/cmwij6wk602s23gnyfy6uq4ox",
+        "https://tmma-production.up.railway.app/api/photo/cmwij6x2h02s33gnyqljf0n8h"
+      ],
+      "status": "available"
+    },
+    {
+      "id": "cmwgoxxch02o33gnyxei6p0ut",
+      "make": "Mercedes",
+      "model": "C-Class",
+      "year": 2023,
+      "price": 2500000,
+      "mileage": null,
+      "color": "الاسود",
+      "transmission": "أوتوماتيك",
+      "condition": "فابريكا بالكامل",
+      "description": "فيه عربيات بتوصّلك… وفيه عربية بتخليك تستنى المشوار الجاي.\n\nMercedes C-Class 2023 — C180، أسود في أسود. أناقة مرسيدس اللي مبتتشرحش، بتتعاش.\n\nعداد 49,509 كم بس، فابريكا بالكامل، بدون حوادث، والشاسيه والقوائم سليمة تماماً.\n\nصياناتها منتظمة عند مركز متخصص وبسجل كامل — آخر صيانة على 42,000 كم واتغير فيها الزيوت والفلاتر.\n\nومن جوه، الفخامة بتتكلم: فرش جلد أسود، كراسي كهربا وتسخين، Digital Cockpit، وإضاءة محيطية Ambient Lighting، مع Apple CarPlay و Android Auto.\n\nومن برّه: LED و Adaptive Lights، مرايات كهربا، حساسات ركن، Blind Spot و Lane Assist، و Drive Modes و Sport Mode للي بيحب يسوق بجد.\n\nرخصة سارية، مستندات الملكية كاملة، وبدون أي التزامات. وصاحبها بيغيّر عربيته، مش أكتر.\n\n📍 المعاينة: مدينتي",
+      "photos": [
+        "https://tmma-production.up.railway.app/api/photo/cmwgtkica02ob3gnydhdgp268",
+        "https://tmma-production.up.railway.app/api/photo/cmwgtkiqd02oc3gnyulgrh8fj",
+        "https://tmma-production.up.railway.app/api/photo/cmwgtkj8402od3gnysci1xslc",
+        "https://tmma-production.up.railway.app/api/photo/cmwgtkjjn02oe3gnyn5hcmbno",
+        "https://tmma-production.up.railway.app/api/photo/cmwgtkjvr02of3gnyqb44le5k",
+        "https://tmma-production.up.railway.app/api/photo/cmwgtkk7u02og3gny7t6huwkm",
+        "https://tmma-production.up.railway.app/api/photo/cmwgtoumh02oh3gnyjqurzson",
+        "https://tmma-production.up.railway.app/api/photo/cmwgtov3r02oi3gnyym9xqmr0",
+        "https://tmma-production.up.railway.app/api/photo/cmwgtovfk02oj3gnym8m1lvsf",
+        "https://tmma-production.up.railway.app/api/photo/cmwgtovsy02ok3gnyxwo9b5ri",
+        "https://tmma-production.up.railway.app/api/photo/cmwgtow4i02ol3gny66i1l4ay"
+      ],
+      "status": "available"
+    },
+    {
+      "id": "cmw5d4ehu02d53gny4vrx1qib",
+      "make": "Mitsubishi",
+      "model": "Pajero",
+      "year": 2018,
+      "price": 1800000,
+      "mileage": 210000,
+      "color": "Dark Grey",
+      "transmission": "Automatic",
+      "condition": "Original except parts",
+      "description": "فيه عربيات اتعملت للأسفلت…\nودي اتعملت للي مفيهوش أسفلت.\n\nMitsubishi Pajero 2018 — أعلى فئة كاملة. الأسطورة اللي اسمها لوحده بيحكي عن سنين في الصحرا والراليات.\n\nقلبها 3800 سي سي، دفع رباعي 4WD مع أنماط قيادة تخليها واثقة في الرمل والطين والأسفلت بنفس الروح. دي مش SUV شكل… دي SUV شغل.\n\nومن جوه، الفئة الكاملة بتتكلم: فرش جلد، كراسي كهربا، فتحة سقف، Digital Cockpit ومرايات كهربا — رفاهية كاملة من غير ما تتنازل عن شخصيتها الخشنة.\n\n210 ألف كيلو، بس بصيانة منتظمة عند متخصص وبسجل كامل — آخر صيانة على 200 ألف. وفرد كاوتش جديدة، وبطارية جديدة، وزيوت وفلاتر متغيرة. تاخدها وتمشي على طول.\n\nوبأمانة كاملة: فيه رشة تجميلية في الكبوت والباب الأمامي اليمين — والشاسيه والقوائم سليمة تماماً.\n\nرخصة سنة — مرور التجمع. وصاحبها بيغير عربيته، مش أكتر.\n\n📍 المعاينة: النرجس 6، القاهرة الجديدة\n📌 السعر نهائي — للجادين فقط",
+      "photos": [
+        "https://tmma-production.up.railway.app/api/photo/cmwav1scy02ia3gnyjxngkawz",
+        "https://tmma-production.up.railway.app/api/photo/cmwav1szm02ib3gnylmffpflk",
+        "https://tmma-production.up.railway.app/api/photo/cmwav1xj802ic3gnyoeeailj9",
+        "https://tmma-production.up.railway.app/api/photo/cmwav1ygi02id3gnyjhkaqh2q",
+        "https://tmma-production.up.railway.app/api/photo/cmwav1z9m02ie3gnyjzw9ippk",
+        "https://tmma-production.up.railway.app/api/photo/cmwav208502if3gnymk6f08oh",
+        "https://tmma-production.up.railway.app/api/photo/cmwav20hc02ig3gnyu6q11scp",
+        "https://tmma-production.up.railway.app/api/photo/cmwav20to02ih3gnytod5knmg"
+      ],
+      "status": "available"
+    },
+    {
+      "id": "cmvqx95wa01rd3gnylvp422sq",
+      "make": "Audi",
+      "model": "Q3",
+      "year": 2024,
+      "price": 2100000,
+      "mileage": 69000,
+      "color": "رمادي",
+      "transmission": "أوتوماتيك",
+      "condition": "فابريكا بالكامل",
+      "description": "فيه عربيات بتحاول تبان فخمة…\nودي؟ الفخامة فيها أصل.\n\nAudi Q3 2024 — الفئة الأولى. يعني أعلى تجهيزة، من غير ما تدور ولا تزود جنيه.\n\n69 ألف كيلو بس، ولسه في الضمان. وصياناتها كلها في التوكيل بالفواتير — آخر صيانة 65 ألف كم، والفرامل والزيوت والفلاتر متغيرين.\n\nرمادي من بره، وجملي من جوه — تركيبة هادية وشيك. جلد، إضاءة محيطية، كراسي كهربا، و Matrix LED و Adaptive Lights ينوروا الطريق قبل ما تفكر فيه.\n\nوكل حاجة حواليك ذكية: Apple CarPlay و Android Auto، حساسات ركن، ودفع اماما FWD يمسك العربية في أي طريق.\n\nفابريكا بالكامل — لا حوادث، الشاسيه والقوائم سليمة. وسبب البيع؟ تحديث، مش أكتر.\n\nوبأمانة كاملة: فيه دق على البارد في الرفرف الشمال — معمول من غير رش ولا معجون، والدهان الأصلي زي ما هو.\n\nعربية واحدة… تجمع كل اللي بتدور عليه من غير تنازل.\n\nموجوده والمعاينه كمباوند ماونتين فيو آى سيتي القاهره الجديده",
+      "photos": [
+        "https://tmma-production.up.railway.app/api/photo/cmvqxwzxh01rq3gny1ppwgsoe",
+        "https://tmma-production.up.railway.app/api/photo/cmvqxx0u701rr3gnytyt0dmqo",
+        "https://tmma-production.up.railway.app/api/photo/cmvqxx1gw01rs3gnyo8oev13m",
+        "https://tmma-production.up.railway.app/api/photo/cmvqxx20401rt3gnyi57ddrs5",
+        "https://tmma-production.up.railway.app/api/photo/cmvqxx27a01ru3gny3jym3w2w",
+        "https://tmma-production.up.railway.app/api/photo/cmvqxx2hh01rv3gnydvpz7eua"
+      ],
+      "status": "available"
+    },
+    {
+      "id": "cmuwztyvg00g73gnyuljxmhbh",
+      "make": "Volvo",
+      "model": "XC90",
+      "year": 2020,
+      "price": 2050000,
+      "mileage": 150000,
+      "color": "رمادى",
+      "transmission": "أوتوماتيك",
+      "condition": "فابريكا بالكامل",
+      "description": "فيه عربيات بتوصلك بسرعة… وفيه عربية بتخليك مش عايز المشوار يخلص.\n\nVolvo XC90 موديل 2020 — صاحبها مكانش سايق عربية، كان سايق بيته التاني.\n\n150 ألف كيلو، كلهم صيانة توكيل بالفواتير. فابريكا بالكامل: لا خبطة، لا رش، لا حادثة — الشاسيه والقوائم سليمة زي يوم ما خرجت من المصنع.\n\nطب ليه بيبيع؟ كلمة واحدة: تحديث. والعربية لسه فيها عُمر.\n\nافتح الباب وهتفهم: فرش جملي جلد، كراسي كهربا بميموري، فتحة سقف بانوراما. ودوس بنزين وهتحس: 4WD، كاميرا 360، مثبت سرعة تكيفي، مساعد حارة، أنظمة ADAS — يعني العربية شايلة عنك نص السواقة.\n\nكاوتش جديد، فرامل جديدة، زيوت وفلاتر وبطارية — كلهم متغيرين. تاخدها وتمشي، مش هتحط جنيه.\n\n📍 المعاينة: مدينتي | 📄 رخصة لحد 2028 (مرور الشروق) | ✅ بدون أي التزامات\n\nالعربيات النضيفة بالحالة دي مبتستناش كتير.",
+      "photos": [
+        "https://tmma-production.up.railway.app/api/photo/cmuy2a8e300if3gnyv0g36yzl",
+        "https://tmma-production.up.railway.app/api/photo/cmuy2a8xp00ig3gnyeeusg6kk",
+        "https://tmma-production.up.railway.app/api/photo/cmuy2a99w00ih3gnyzaucdvio",
+        "https://tmma-production.up.railway.app/api/photo/cmuy2a9q300ii3gny1gjndceu",
+        "https://tmma-production.up.railway.app/api/photo/cmuy2aa1q00ij3gnyunbb0iwj",
+        "https://tmma-production.up.railway.app/api/photo/cmuy2aa9500ik3gnye2zlqo1w",
+        "https://tmma-production.up.railway.app/api/photo/cmuy2aaiz00il3gnysbdmij3w",
+        "https://tmma-production.up.railway.app/api/photo/cmuy2aat400im3gny05oktnwj"
+      ],
+      "status": "available"
+    },
+    {
+      "id": "cmuc8lqed42683dqorbb6m9uo",
+      "make": "DS",
+      "model": "DS7",
+      "year": 2020,
+      "price": 1300000,
+      "mileage": 147800,
+      "color": "اسود",
+      "transmission": "أوتوماتيك",
+      "condition": "فابريكا ما عدا أجزاء",
+      "description": "🚗 Ds7 Performance Plus 2020 🔥\n\n✅ موديل 2020\n✅ فئة Performance Plus\n✅ عداد 147,800 كم\n✅ أوتوماتيك\n✅ اللون الخارجي: Black\n✅ اللون الداخلي: Black\n✅ فابريكا ما عدا الباب الخلفي اليمين\n✅ بدون حوادث\n✅ الشاسيه والقوائم سليمة\n✅ الصيانة منتظمة بالتوكيل\n✅ سجل صيانة متوفر\n✅ آخر صيانة على 145,000 كم\n✅ تم تغيير الزيوت والفلاتر\n✅ الضمان منتهي\n✅ رخصة سارية\n✅ مستندات الصيانة متوفرة\n✅ لا توجد أي التزامات على السيارة\nالعداد قابل للزياده \n1600CC\n✨ التجهيزات:\n✔️ Sunroof\n✔️ Panoramic Roof\n✔️ LED\n✔️ Adaptive Lights\n✔️ Power Tailgate\n✔️ Electric Mirrors\n✔️ Leather Interior\n✔️ Electric Seats\n✔️ Memory Seats\n✔️ Digital Cockpit\n✔️ Ambient Lighting\n✔️ Apple CarPlay\n✔️ Android Auto\n✔️ Parking Sensors\n✔️ Drive Modes\n\n📍 المعاينة: غرب الجولف – التجمع الخامس\n\n🔄 قابل للتفاوض",
+      "photos": [
+        "https://tmma-production.up.railway.app/api/photo/cmuc8jxhi425x3dqowc1fyuu0",
+        "https://tmma-production.up.railway.app/api/photo/cmuc8jyg7425y3dqosk0ou6ym",
+        "https://tmma-production.up.railway.app/api/photo/cmuc8jz3h425z3dqozmt9naq2",
+        "https://tmma-production.up.railway.app/api/photo/cmuc8jzti42603dqotxyv6rg5",
+        "https://tmma-production.up.railway.app/api/photo/cmuc8k0q942613dqoatcug5o6",
+        "https://tmma-production.up.railway.app/api/photo/cmuc8k1h042623dqov3wnekca",
+        "https://tmma-production.up.railway.app/api/photo/cmuc8k26w42633dqo29mdeuhk",
+        "https://tmma-production.up.railway.app/api/photo/cmuc8k2tb42643dqogql2clua",
+        "https://tmma-production.up.railway.app/api/photo/cmuc8k3ak42653dqojv6ik2rs",
+        "https://tmma-production.up.railway.app/api/photo/cmuc8k4f842663dqouqwe7mol",
+        "https://tmma-production.up.railway.app/api/photo/cmuc8k4yn42673dqolen3jm21"
+      ],
+      "status": "available"
+    },
+    {
+      "id": "cmu0x4bms3dgk3dqowo3qrgfh",
+      "make": "Mercedes",
+      "model": "EQS SUV",
+      "year": 2023,
+      "price": 5500000,
+      "mileage": 0,
+      "color": "Alpine grey",
+      "transmission": "Automatic",
+      "condition": "Fully original",
+      "description": "⚡ Mercedes-Benz EQS SUV 500 4MATIC 2023 | Brand New ⚡\n\nفخامة الـ S-Class في SUV كهربائية بـ 7 مقاعد، مع تجهيزات كاملة وHyperscreen وضمان محلي. 🔥\n\n✅ موديل 2023\n✅ EQS SUV 500 4MATIC\n✅ Brand New\n✅ Limited Edition\n✅ كهرباء بالكامل\n✅ 4MATIC – 4WD\n✅ اللون الخارجي: Alpine Grey\n✅ اللون الداخلي: Black\n✅ 7-Seater\n✅ فابريكا بالكامل\n✅ بدون حوادث\n✅ الشاسيه والقوائم سليمة\n✅ ضمان الوكيل المحلي ساري\n✅ ضمان البطارية 8 سنوات\n✅ صيانة مجانية 6 سنوات\n✅ سجل الصيانة والفواتير ومستندات الملكية متوفرة\n✅ لا توجد أي التزامات على السيارة\n\n🖥️ أبرز التجهيزات:\n✔️ MBUX Hyperscreen\n✔️ Panoramic Roof & Sunroof\n✔️ LED Headlights\n✔️ Adaptive Lights\n✔️ Electric Mirrors\n✔️ Power Tailgate\n✔️ Leather Interior\n✔️ Electric Seats\n✔️ Memory Seats\n✔️ Heated Seats\n✔️ Ventilated Seats\n✔️ Ambient Lighting\n✔️ Digital Cockpit\n✔️ Apple CarPlay\n✔️ 360° Camera\n✔️ Parking Sensors\n✔️ Head-Up Display (HUD)\n✔️ Adaptive Cruise Control\n✔️ Lane Assist\n✔️ Blind Spot Assist\n✔️ ADAS\n✔️ Air Suspension\n✔️ Sport Mode\n✔️ Multiple Drive Modes\n✔️ 4MATIC All-Wheel Drive\n\n💎 Alpine Grey Limited Edition + Black Interior + Hyperscreen + 7 Seats\nConfiguration مميز جدًا يجمع بين الفخامة، المساحة، التكنولوجيا والأداء الكهربائي في عربية واحدة.\n\n📍 المعاينة: New Cairo\n\n🔒 السعر نهائي – غير قابل للتفاوض",
+      "photos": [
+        "https://tmma-production.up.railway.app/api/photo/cmu1n9vyt3lkt3dqoaot2y9nq",
+        "https://tmma-production.up.railway.app/api/photo/cmu1n9wsk3lku3dqo1hdtuvrs",
+        "https://tmma-production.up.railway.app/api/photo/cmu1n9xbv3lkv3dqo96t31jzy",
+        "https://tmma-production.up.railway.app/api/photo/cmu1n9xxa3lkw3dqojh4xxk73"
+      ],
+      "status": "available"
+    },
+    {
+      "id": "cmto7o21y2sn33dqolhyyglko",
+      "make": "Mercedes",
+      "model": "GLA",
+      "year": 2019,
+      "price": 1750000,
+      "mileage": 67000,
+      "color": "ابيض",
+      "transmission": "أوتوماتيك",
+      "condition": "فابريكا ما عدا أجزاء",
+      "description": "🚗 Mercedes-Benz GLA 200 2019 🚗\n\n✅ موديل 2019\n✅ عداد 67,000 كم\n✅ أوتوماتيك\n✅ اللون الخارجي: أبيض\n✅ فابريكا ما عدا الباب الأمامي الشمال\n✅ القوائم سليمة\n✅ الصيانة منتظمة بالتوكيل\n✅ سجل صيانة متوفر\n✅ تم تغيير البطارية والإطارات والزيوت والفلاتر\n✅ رخصة سارية\n✅ لا توجد أي التزامات على السيارة\n\n📍 المعاينة: كمبوند سوديك إيست تاون\n\nسيارة Mercedes-Benz GLA 2019 بعداد قليل، وصيانتها منتظمة بالتوكيل مع سجل صيانة متوفر.",
+      "photos": [
+        "https://tmma-production.up.railway.app/api/photo/cmtu015n439293dqou4ise9fx",
+        "https://tmma-production.up.railway.app/api/photo/cmtu016jz392a3dqo36wxvuxv",
+        "https://tmma-production.up.railway.app/api/photo/cmtu016s4392b3dqoa4690ddn",
+        "https://tmma-production.up.railway.app/api/photo/cmtu0170p392c3dqo7flz5jcx",
+        "https://tmma-production.up.railway.app/api/photo/cmtu017d6392d3dqo6y1b9qca",
+        "https://tmma-production.up.railway.app/api/photo/cmtu017s5392e3dqo6rkpispn"
+      ],
+      "status": "available"
+    },
+    {
+      "id": "cmtjgk7xg2o9g3dqod4ugg5ir",
+      "make": "Ford",
+      "model": "Mustang",
+      "year": 2015,
+      "price": 900000,
+      "mileage": 103000,
+      "color": "Blue",
+      "transmission": "Automatic",
+      "condition": "Fully painted",
+      "description": "مش كل Mustang معمولة عشان تبقى عادية… دي اتعملت عشان تتشاف وتتسمع. 🐍\n\nFord Mustang Coupe 2015 | Shelby Style | 400 HP\n\nلو بتدور على Mustang مختلفة فعلًا، فدي مش مجرد Body Kit وشكل رياضي. العربية متعدلة Full Shelby Style، قوتها مرفوعة لـ 400 حصان، ومعاها Exhaust Setup كامل بيديها حضور وصوت يليق بشكلها. 🔥\n\n🏁 القوة والأداء:\n• محرك 3.7L V6\n• القوة مرفوعة من 310 HP إلى 400 HP\n• Rear-Wheel Drive (RWD)\n• عداد 103,000 كم\n• Coupe – بابين\n\n🐍 Shelby Look من أول نظرة:\n• Full Shelby Body Kit\n• جنوط Mach 1 – 20 Inch\n• الجنط الاستبن الأصلي فقط متوفر مع العربية\n• تطوير الفوانيس الأمامية والخلفية\n• GT Style Rear Lights\n• Illuminated Rear Diffuser\n• Illuminated Side Markers\n\n🔊 والصوت؟ جزء من التجربة.\n\nFull Exhaust System:\nStraight Pipes + Resonators + 2 Roush USA Rears + Dual Akrapovic Tips\n\nتنفيذ FT Customs\n\n🛋️ ومن جوه مكملة نفس الشخصية:\n• Shelby Steering Wheel Cover\n• Shelby Interior\n• Upgraded Multimedia Screen\n\n💥 النتيجة؟\nMustang بشكل Shelby هجومي، 400 حصان، دفع خلفي، وصوت رياضي يخلي العربية ليها حضور قبل حتى ما توصل.\n\n📌 ملاحظة مهمة:\nالسيارة جمرك إقامات وأصحاب جنسيات.\n\n📍 المعاينة: الشروق أو مدينتي",
+      "photos": [
+        "https://tmma-production.up.railway.app/api/photo/cmtjgk4u72o9a3dqoo8eyh0h4",
+        "https://tmma-production.up.railway.app/api/photo/cmtjgk56w2o9b3dqoxsy4ilp6",
+        "https://tmma-production.up.railway.app/api/photo/cmtjgk5fk2o9d3dqo7qtbaz7l",
+        "https://tmma-production.up.railway.app/api/photo/cmtjgk5oy2o9e3dqo71iriqip",
+        "https://tmma-production.up.railway.app/api/photo/cmtjgk5vu2o9f3dqosj9ui6r7"
+      ],
+      "status": "available"
+    },
+    {
+      "id": "cmrzf7zth004a3eo6bxbf16e6",
+      "make": "Mercedes ",
+      "model": "GLC200",
+      "year": 2020,
+      "price": 3400000,
+      "mileage": 55000,
+      "color": "Black ",
+      "transmission": null,
+      "condition": null,
+      "description": "🚗 Mercedes GLC 200 Coupe 2020 🚗\n\n✅ عداد 55,000 كم\n✅ لون خارجي Graphite Grey\n✅ فرش ARTICO Beige\n✅ بدون رش\n✅ حالة ممتازة\n\n✨ التجهيزات:\n✔️ Smartphone Integration\n✔️ Rear View Camera\n✔️ Active Parking Assist\n✔️ Sliding Sunroof\n✔️ Ambient Lighting\n✔️ LED Headlights\n✔️ جنوط 18 بوصة\n✔️ Electric Tailgate\n✔️ Wireless Phone Charging\n✔️ Open Pore Walnut Wood Trim\n✔️ Night Package\n✔️ Dark Tinted Glass\n✔️ Fire Extinguisher\n\n📍 المرور: المعادي\n\nسيارة Coupe فاخرة بحالة ممتازة، عداد قليل، بدون رش، ومجهزة بمجموعة كبيرة من الكماليات والتجهيزات المميزة.",
+      "photos": [
+        "https://tmma-production.up.railway.app/api/photo/cmt91o5wr27g73dqo3p74g006",
+        "https://tmma-production.up.railway.app/api/photo/cmt91og2727ga3dqou3oph0n5",
+        "https://tmma-production.up.railway.app/api/photo/cmt91okfu27gb3dqoy4sp82lo",
+        "https://tmma-production.up.railway.app/api/photo/cmt91or2o27gh3dqo0eyv51xp",
+        "https://tmma-production.up.railway.app/api/photo/cmt91ozf127gk3dqohny73nic",
+        "https://tmma-production.up.railway.app/api/photo/cmt91p2q527gl3dqok1x68c83",
+        "https://tmma-production.up.railway.app/api/photo/cmt91p3o627gm3dqofcl0sy42"
+      ],
+      "status": "available"
+    },
+    {
+      "id": "cmrzf5g1y00403eo6gxfylg2f",
+      "make": "Zeekr",
+      "model": "007 GT long range ",
+      "year": 2025,
+      "price": 2400000,
+      "mileage": 400,
+      "color": "White ",
+      "transmission": null,
+      "condition": null,
+      "description": "⚡ Zeekr 007 GT Long Range 2025 ⚡\n\n🔥 من أوائل سيارات Zeekr 007 GT الموجودة في مصر\n\n✅ نسخة English Version\n✅ بروتوكول صيني\n✅ الشاحن الأصلي متوفر\n✅ بطارية 100 kWh\n✅ مدى يصل إلى 825 KM (CLTC)\n✅ قوة 310 kW\n✅ Electric Doors\n✅ Zeekr Stargate Lights\n✅ جنوط 20 بوصة\n\n✅ عداد 220 كم فقط\n✅ جاهزة على الترخيص\n\n📍 المعاينة: التجمع",
+      "photos": [
+        "https://tmma-production.up.railway.app/api/photo/cmrzf5fxc003q3eo6uyas9fc9",
+        "https://tmma-production.up.railway.app/api/photo/cmrzf5fxn003r3eo6v8zy6oth",
+        "https://tmma-production.up.railway.app/api/photo/cmrzf5fxu003s3eo6xclmgfpn",
+        "https://tmma-production.up.railway.app/api/photo/cmrzf5fxy003t3eo6i3c59p94",
+        "https://tmma-production.up.railway.app/api/photo/cmrzf5fy5003u3eo6zg51xsmk",
+        "https://tmma-production.up.railway.app/api/photo/cmrzf5fyc003v3eo66sooan65",
+        "https://tmma-production.up.railway.app/api/photo/cmrzf5fyp003w3eo6xvrpx4hr",
+        "https://tmma-production.up.railway.app/api/photo/cmrzf5fyz003x3eo68ozpb0ni",
+        "https://tmma-production.up.railway.app/api/photo/cmrzf5fz4003y3eo6n5b4ylbx",
+        "https://tmma-production.up.railway.app/api/photo/cmrzf5fza003z3eo6qe468idw"
+      ],
+      "status": "available"
+    }
+  ]
+}
+</script>
+<!-- CARS-DATA-END -->
+
+<script>
+(function(){
+  "use strict";
+  var data = JSON.parse(document.getElementById('cars-data').textContent);
+  var cars = (data.cars || []).slice();
+  // المتاح أولاً ثم المباع، مع الحفاظ على ترتيب كل مجموعة
+  cars.sort(function(a,b){
+    var ra = a.status === 'sold' ? 1 : 0, rb = b.status === 'sold' ? 1 : 0;
+    return ra - rb;
+  });
+
+  var nf = new Intl.NumberFormat('ar-EG-u-nu-latn');
+  function fmt(n){ return nf.format(n); }
+  function esc(s){
+    return String(s == null ? '' : s)
+      .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+      .replace(/"/g,'&quot;');
+  }
+
+  // شريط المعلومات العلوي
+  var avail = cars.filter(function(c){return c.status !== 'sold';}).length;
+  var soldCount = cars.length - avail;
+  var meta = document.getElementById('bandMeta');
+  var parts = [];
+  parts.push('<span>' + fmt(avail) + ' سيارات متاحة</span>');
+  if (soldCount > 0) parts.push('<span>' + fmt(soldCount) + ' مباعة</span>');
+  if (data.updatedAt){
+    try{
+      var d = new Date(data.updatedAt + 'T00:00:00');
+      var ds = new Intl.DateTimeFormat('ar-EG-u-nu-latn',{day:'numeric',month:'long',year:'numeric'}).format(d);
+      parts.push('<span>آخر تحديث: ' + ds + '</span>');
+    }catch(e){}
+  }
+  meta.innerHTML = parts.join('');
+
+  var grid = document.getElementById('grid');
+  if (!cars.length){ document.getElementById('emptyState').hidden = false; }
+
+  function specHTML(car){
+    var items = [];
+    if (car.year) items.push(['سنة الصنع', car.year]);
+    if (car.mileage !== null && car.mileage !== undefined && car.mileage !== '') items.push(['الممشى', fmt(car.mileage) + ' كم']);
+    if (car.color) items.push(['اللون', car.color]);
+    if (car.transmission) items.push(['ناقل الحركة', car.transmission]);
+    if (car.condition) items.push(['الحالة', car.condition]);
+    if (!items.length) return '';
+    return '<div class="specs">' + items.map(function(it){
+      return '<div class="spec"><span class="k">' + esc(it[0]) + '</span><span class="v">' + esc(it[1]) + '</span></div>';
+    }).join('') + '</div>';
+  }
+
+  cars.forEach(function(car, idx){
+    var title = (car.make + ' ' + car.model + ' ' + (car.year || '')).replace(/\s+/g,' ').trim();
+    var photos = car.photos || [];
+    var isSold = car.status === 'sold';
+
+    var card = document.createElement('article');
+    card.className = 'card' + (isSold ? ' sold' : '');
+
+    var html = '<div class="photo-wrap">';
+    if (isSold) html += '<span class="badge-sold">مباعة</span>';
+    if (photos.length){
+      html += '<img class="photo-main" src="' + esc(photos[0]) + '" alt="' + esc(title) + '" loading="lazy" tabindex="0" role="button" aria-label="تكبير صور ' + esc(title) + '">';
+      if (photos.length > 1) html += '<span class="photo-count">' + fmt(photos.length) + ' صور</span>';
+    }
+    html += '</div>';
+    if (photos.length > 1){
+      html += '<div class="thumbs">' + photos.map(function(p,i){
+        return '<button class="thumb' + (i === 0 ? ' active' : '') + '" data-i="' + i + '" aria-label="صورة ' + (i+1) + '"><img src="' + esc(p) + '" alt="" loading="lazy"></button>';
+      }).join('') + '</div>';
+    }
+    html += '<div class="body">';
+    html += '<h2 class="car-title">' + esc(title) + '</h2>';
+    if (car.price !== null && car.price !== undefined){
+      html += '<div class="price">' + fmt(car.price) + ' <small>ج.م</small></div>';
+    }
+    html += specHTML(car);
+    if (car.description){
+      html += '<div class="desc-wrap"><p class="desc" id="desc-' + idx + '">' + esc(car.description) + '</p>';
+      html += '<button class="toggle-desc" data-target="desc-' + idx + '" hidden>عرض الوصف بالكامل</button></div>';
+    }
+    html += '</div>';
+    card.innerHTML = html;
+    grid.appendChild(card);
+
+    // معرض الصور داخل الكارت
+    var mainImg = card.querySelector('.photo-main');
+    var thumbs = card.querySelectorAll('.thumb');
+    function currentIndex(){
+      var act = card.querySelector('.thumb.active');
+      return act ? +act.dataset.i : 0;
+    }
+    function setPhoto(i){
+      if (!mainImg) return;
+      mainImg.src = photos[i];
+      thumbs.forEach(function(t){ t.classList.toggle('active', +t.dataset.i === i); });
+    }
+    thumbs.forEach(function(t){
+      t.addEventListener('click', function(){ setPhoto(+t.dataset.i); });
+    });
+    if (mainImg){
+      mainImg.addEventListener('click', function(){ openLightbox(photos, title, currentIndex()); });
+      mainImg.addEventListener('keydown', function(e){
+        if (e.key === 'Enter' || e.key === ' '){ e.preventDefault(); openLightbox(photos, title, currentIndex()); }
+      });
+    }
+  });
+
+  // قصّ الوصف الطويل مع زر عرض الكل
+  document.querySelectorAll('.desc').forEach(function(p){
+    if (p.scrollHeight > 190){
+      p.classList.add('clamped');
+      var btn = document.querySelector('.toggle-desc[data-target="' + p.id + '"]');
+      if (btn){
+        btn.hidden = false;
+        btn.addEventListener('click', function(){
+          var stillClamped = p.classList.toggle('clamped');
+          btn.textContent = stillClamped ? 'عرض الوصف بالكامل' : 'عرض أقل';
+        });
+      }
+    }
+  });
+
+  // ---------- Lightbox ----------
+  var lb = document.getElementById('lightbox');
+  var lbImg = document.getElementById('lbImg');
+  var lbTitle = document.getElementById('lbTitle');
+  var lbCount = document.getElementById('lbCount');
+  var lbPhotos = [], lbIndex = 0, lbName = '';
+
+  function renderLb(){
+    lbImg.src = lbPhotos[lbIndex];
+    lbImg.alt = lbName;
+    lbTitle.textContent = lbName;
+    lbCount.textContent = fmt(lbIndex + 1) + ' / ' + fmt(lbPhotos.length);
+  }
+  function openLightbox(photos, name, start){
+    if (!photos.length) return;
+    lbPhotos = photos; lbName = name; lbIndex = start || 0;
+    renderLb();
+    lb.classList.add('open');
+    document.body.style.overflow = 'hidden';
+  }
+  function closeLightbox(){
+    lb.classList.remove('open');
+    document.body.style.overflow = '';
+  }
+  document.getElementById('lbClose').addEventListener('click', closeLightbox);
+  document.getElementById('lbNext').addEventListener('click', function(){ lbIndex = (lbIndex + 1) % lbPhotos.length; renderLb(); });
+  document.getElementById('lbPrev').addEventListener('click', function(){ lbIndex = (lbIndex - 1 + lbPhotos.length) % lbPhotos.length; renderLb(); });
+  lb.addEventListener('click', function(e){ if (e.target === lb) closeLightbox(); });
+  document.addEventListener('keydown', function(e){
+    if (!lb.classList.contains('open')) return;
+    if (e.key === 'Escape') closeLightbox();
+    if (e.key === 'ArrowLeft') document.getElementById('lbNext').click();
+    if (e.key === 'ArrowRight') document.getElementById('lbPrev').click();
+  });
+})();
+</script>
+</body>
+</html>
